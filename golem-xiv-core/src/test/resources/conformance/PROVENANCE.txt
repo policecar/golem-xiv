@@ -1,0 +1,1 @@
+VERSION 0.1.0-phase0 (vendored from golem-xiv-spec)

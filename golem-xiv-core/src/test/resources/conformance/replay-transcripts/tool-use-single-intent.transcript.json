@@ -1,0 +1,48 @@
+{
+  "name": "tool-use-single-intent",
+  "description": "A single assistant turn that emits one Intent over the provider tool-use channel. The tool input JSON ({purpose, code}) arrives as partial-JSON deltas and is decoded by the streaming JSON parser into Intent purpose/code sub-events. This is the load-bearing decode path. Decoder under test: Cognizer.reason + IntentCognizer.",
+  "contract": "providerStream (normalized) + stub -> CognitionEvent*. The `partialJson` deltas concatenate to the tool input: {\"purpose\":\"Add two numbers\",\"code\":\"2 + 2\"}.",
+  "stub": {
+    "comment": "phenomenonIds[0] is the intent phenomenon id from initiateIntentPhenomenon; systemId is the provider tool-use block id (echoed verbatim).",
+    "golemSelfId": 1,
+    "cognitionId": 1000,
+    "expressionId": 2000,
+    "phenomenonIds": [3000],
+    "initiationMoment": "2026-06-04T12:00:00Z",
+    "culminationMoment": "2026-06-04T12:00:03Z"
+  },
+  "providerStream": [
+    { "event": "message_start", "model": "claude-opus-4-8" },
+    { "event": "content_block_start", "block": { "kind": "tool_use", "id": "toolu_01calc" } },
+    { "event": "content_block_delta", "delta": { "kind": "input_json", "partialJson": "{\"purpose\":\"" } },
+    { "event": "content_block_delta", "delta": { "kind": "input_json", "partialJson": "Add two " } },
+    { "event": "content_block_delta", "delta": { "kind": "input_json", "partialJson": "numbers\",\"code\":\"" } },
+    { "event": "content_block_delta", "delta": { "kind": "input_json", "partialJson": "2 + 2" } },
+    { "event": "content_block_delta", "delta": { "kind": "input_json", "partialJson": "\"}" } },
+    { "event": "content_block_stop" },
+    { "event": "message_stop" }
+  ],
+  "expectedEvents": [
+    { "type": "ExpressionInitiation", "expressionId": 2000, "agent": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.AI", "id": 1, "model": "claude-opus-4-8", "vendor": "Anthropic" }, "moment": "2026-06-04T12:00:00Z" },
+    { "type": "IntentInitiation", "id": 3000, "expressionId": 2000, "systemId": "toolu_01calc" },
+    { "type": "IntentPurposeInitiation", "id": 3000, "expressionId": 2000 },
+    { "type": "IntentPurposeUnfolding", "id": 3000, "expressionId": 2000, "purposeDelta": "Add two " },
+    { "type": "IntentPurposeUnfolding", "id": 3000, "expressionId": 2000, "purposeDelta": "numbers" },
+    { "type": "IntentPurposeCulmination", "id": 3000, "expressionId": 2000 },
+    { "type": "IntentCodeInitiation", "id": 3000, "expressionId": 2000 },
+    { "type": "IntentCodeUnfolding", "id": 3000, "expressionId": 2000, "codeDelta": "2 + 2" },
+    { "type": "IntentCodeCulmination", "id": 3000, "expressionId": 2000 },
+    { "type": "IntentCulmination", "id": 3000, "expressionId": 2000 },
+    { "type": "ExpressionCulmination", "expressionId": 2000, "moment": "2026-06-04T12:00:03Z" }
+  ],
+  "decodeTrace": {
+    "comment": "How each input_json delta maps through DefaultStreamingJsonParser -> IntentCognizer, to make the streaming boundaries auditable.",
+    "steps": [
+      { "partialJson": "{\"purpose\":\"", "jsonEvents": ["DocumentStart", "ObjectStart", "PropertyName(purpose)", "StringStart"], "cognitionEvents": ["IntentPurposeInitiation"] },
+      { "partialJson": "Add two ", "jsonEvents": ["StringDelta(Add two )"], "cognitionEvents": ["IntentPurposeUnfolding(Add two )"] },
+      { "partialJson": "numbers\",\"code\":\"", "jsonEvents": ["StringDelta(numbers)", "StringEnd", "PropertyName(code)", "StringStart"], "cognitionEvents": ["IntentPurposeUnfolding(numbers)", "IntentPurposeCulmination", "IntentCodeInitiation"] },
+      { "partialJson": "2 + 2", "jsonEvents": ["StringDelta(2 + 2)"], "cognitionEvents": ["IntentCodeUnfolding(2 + 2)"] },
+      { "partialJson": "\"}", "jsonEvents": ["StringEnd", "ObjectEnd", "DocumentEnd"], "cognitionEvents": ["IntentCodeCulmination"] }
+    ]
+  }
+}

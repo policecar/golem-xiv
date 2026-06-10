@@ -1,0 +1,28 @@
+{
+  "$comment": "Impediment-production conformance. When an intent's GolemScript fails, the executor feeds the error back wrapped in a <golem:impediment phase=\"...\"> envelope (Dialect M). The ENVELOPE (open tag + phase ∈ {COMPILATION, EVALUATION} + matching close tag + single trailing newline) is the language-neutral contract every harness MUST honour. `referenceMessage` is the EXACT output of the JVM/Kotlin reference executor and is implementation-specific (diagnostic text + stack frames); non-JVM harnesses validate the envelope only. Seeded verbatim from golem-xiv-core/src/test/kotlin/script/GolemScriptExecutorTest.kt.",
+  "dialect": "M",
+  "bodyIsImplementationSpecific": true,
+  "cases": [
+    {
+      "name": "evaluation-runtime-exception",
+      "source": "GolemScriptExecutorTest::should report script runtime exception",
+      "code": "throw Exception(\"must fail\")",
+      "phase": "EVALUATION",
+      "referenceMessage": "<golem:impediment phase=\"EVALUATION\">\njava.lang.Exception: must fail\n  at Script.invokeSuspend(golem-script.kts:1)\n  | throw Exception(\"must fail\")\n</golem:impediment>\n"
+    },
+    {
+      "name": "compilation-unresolved-reference",
+      "source": "GolemScriptExecutorTest::should report single unresolved reference error on line 1 without imports",
+      "code": "undefinedVariable",
+      "phase": "COMPILATION",
+      "referenceMessage": "<golem:impediment phase=\"COMPILATION\">\n[ERROR] Unresolved reference 'undefinedVariable'.\n  at line 1\n  | <error>undefinedVariable</error>\n\n</golem:impediment>\n"
+    },
+    {
+      "name": "compilation-expecting-brace",
+      "source": "GolemScriptExecutorTest::should report syntax error on single character script",
+      "code": "{",
+      "phase": "COMPILATION",
+      "referenceMessage": "<golem:impediment phase=\"COMPILATION\">\n[ERROR] Expecting '}'\n  at line 1\n  | {<error></error>\n\n</golem:impediment>\n"
+    }
+  ]
+}

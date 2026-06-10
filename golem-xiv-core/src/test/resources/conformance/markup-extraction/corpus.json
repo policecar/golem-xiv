@@ -1,0 +1,66 @@
+{
+  "$comment": "Markup-extraction conformance corpus. A conforming extractor consumes the input (in ANY chunking, including the streaming `chunking` hint) and MUST emit exactly `expected`, in order. Extracted code is whitespace-trimmed. Seeded verbatim from golem-xiv-core/src/test/kotlin/script/GolemScriptExtractionTest.kt (Dialect C: <golem-script purpose=\"...\">...</golem-script>).",
+  "dialect": "C",
+  "contract": "Flow<String>.extractGolemScripts() -> Flow<{ purpose, code }>",
+  "cases": [
+    {
+      "name": "simple-script-tag",
+      "source": "GolemScriptExtractionTest::should extract simple script tag",
+      "input": "<golem-script purpose=\"test\">\"foo\"</golem-script>",
+      "expected": [
+        { "purpose": "test", "code": "\"foo\"" }
+      ]
+    },
+    {
+      "name": "multiline-script-tag",
+      "source": "GolemScriptExtractionTest::should extract multiline script tag",
+      "input": "<golem-script purpose=\"test\">\nprintln(\"foo\")\n</golem-script>",
+      "expected": [
+        { "purpose": "test", "code": "println(\"foo\")" }
+      ],
+      "note": "Leading/trailing whitespace around the body is trimmed."
+    },
+    {
+      "name": "multiple-multiline-tags-chunked",
+      "source": "GolemScriptExtractionTest::should extract multiple multiline script tags from chunked String flow",
+      "chunking": { "byChars": 5 },
+      "input": "<golem-script purpose=\"Set title\">\ncontext.title = \"Test run\"\n</golem-script>\n\nSome non-script paragraph.\n\n<golem-script purpose=\"Calculate numbers\">\nval result = 2+2\nprintln(result)\nresult\n</golem-script>",
+      "expected": [
+        { "purpose": "Set title", "code": "context.title = \"Test run\"" },
+        { "purpose": "Calculate numbers", "code": "val result = 2+2\nprintln(result)\nresult" }
+      ],
+      "note": "Non-script prose between blocks is discarded. Extraction is chunking-invariant (here fed as 5-char chunks)."
+    },
+    {
+      "name": "no-script-in-plain-text",
+      "source": "GolemScriptExtractionTest::should not extract script from non-script content",
+      "input": "No script tags here",
+      "expected": []
+    },
+    {
+      "name": "incomplete-script-tag-not-extracted",
+      "source": "GolemScriptExtractionTest::should not extract incomplete script tag",
+      "input": "<golem-script purpose=\"test\">Test content",
+      "expected": [],
+      "note": "A block is emitted only once BOTH the opening `>` and the closing `</golem-script>` are present. Missing end tag => nothing extracted (supports streaming)."
+    },
+    {
+      "name": "complex-multiline-body",
+      "source": "GolemScriptExtractionTest::should extract script with complex content",
+      "input": "<golem-script purpose=\"code\">\nfun test() {\n    return \"This is a test\"\n}\n</golem-script>\"",
+      "expected": [
+        { "purpose": "code", "code": "fun test() {\n    return \"This is a test\"\n}" }
+      ],
+      "note": "Trailing characters after the end tag (here a stray `\"`) are ignored."
+    },
+    {
+      "name": "empty-purpose",
+      "source": "GolemScriptExtractionTest::should extract script with empty purpose",
+      "input": "<golem-script purpose=\"\">null</golem-script>",
+      "expected": [
+        { "purpose": "", "code": "null" }
+      ],
+      "note": "An empty purpose attribute is valid."
+    }
+  ]
+}
