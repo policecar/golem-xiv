@@ -1,0 +1,118 @@
+{
+  "$comment": "Canonical serialization vectors. Each `json` is the expected wire form (kotlinx.serialization defaults: 'type' discriminator, encodeDefaults=false so defaulted fields are OMITTED) and MUST validate against the schema named in `schema` (an $id + JSON-pointer). Round-trip contract: deserialize(json) -> value -> serialize -> json (byte-identical after canonical key ordering). See NOTICE.md for the two discriminator conventions.",
+  "vectors": [
+    {
+      "name": "agent-ai",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json#/$defs/EpistemicAgent",
+      "notes": "EpistemicAgent.AI carries NO @SerialName -> discriminator value is the fully-qualified class name (kotlinx default). This differs from Phenomenon/CognitionEvent (short @SerialName).",
+      "json": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.AI", "id": 1, "model": "claude-opus-4-8", "vendor": "Anthropic" }
+    },
+    {
+      "name": "agent-human",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json#/$defs/EpistemicAgent",
+      "json": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.Human", "id": 0 }
+    },
+    {
+      "name": "agent-computer",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json#/$defs/EpistemicAgent",
+      "json": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.Computer", "id": 2 }
+    },
+    {
+      "name": "phenomenon-text",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json#/$defs/Phenomenon",
+      "json": { "type": "Text", "id": 3000, "text": "What is 2 + 2?" }
+    },
+    {
+      "name": "phenomenon-intent",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json#/$defs/Phenomenon",
+      "json": { "type": "Intent", "id": 3001, "systemId": "toolu_01calc", "purpose": "Add two numbers", "code": "2 + 2" }
+    },
+    {
+      "name": "phenomenon-fulfillment-default-impeded-omitted",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json#/$defs/Phenomenon",
+      "notes": "impeded defaults to false and is OMITTED from the wire.",
+      "json": { "type": "Fulfillment", "id": 3002, "intentId": 3001, "intentSystemId": "toolu_01calc", "result": "4" }
+    },
+    {
+      "name": "phenomenon-fulfillment-impeded-true",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json#/$defs/Phenomenon",
+      "notes": "When impeded is true (non-default) it IS present.",
+      "json": { "type": "Fulfillment", "id": 3003, "intentId": 3001, "intentSystemId": "toolu_01calc", "result": "<golem:impediment phase=\"EVALUATION\">...</golem:impediment>\n", "impeded": true }
+    },
+    {
+      "name": "expression-unfolding-no-culmination",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json",
+      "notes": "culminationMoment defaults to null and is OMITTED while the expression is still unfolding.",
+      "json": {
+        "id": 2000,
+        "agent": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.AI", "id": 1, "model": "claude-opus-4-8", "vendor": "Anthropic" },
+        "phenomena": [ { "type": "Text", "id": 3000, "text": "Let me compute that." } ],
+        "initiationMoment": "2026-06-04T12:00:00Z"
+      }
+    },
+    {
+      "name": "expression-culminated",
+      "schema": "https://golem-xiv.spec/schema/domain-model.schema.json",
+      "json": {
+        "id": 2000,
+        "agent": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.AI", "id": 1, "model": "claude-opus-4-8", "vendor": "Anthropic" },
+        "phenomena": [ { "type": "Intent", "id": 3001, "systemId": "toolu_01calc", "purpose": "Add two numbers", "code": "2 + 2" } ],
+        "initiationMoment": "2026-06-04T12:00:00Z",
+        "culminationMoment": "2026-06-04T12:00:03Z"
+      }
+    },
+    {
+      "name": "event-expression-initiation",
+      "schema": "https://golem-xiv.spec/schema/cognition-event.schema.json",
+      "json": { "type": "ExpressionInitiation", "expressionId": 2000, "agent": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.AI", "id": 1, "model": "claude-opus-4-8", "vendor": "Anthropic" }, "moment": "2026-06-04T12:00:00Z" }
+    },
+    {
+      "name": "event-intent-initiation-recursive-omitted",
+      "schema": "https://golem-xiv.spec/schema/cognition-event.schema.json",
+      "notes": "recursiveCognitionId defaults to null and is OMITTED.",
+      "json": { "type": "IntentInitiation", "id": 3001, "expressionId": 2000, "systemId": "toolu_01calc" }
+    },
+    {
+      "name": "event-intent-code-unfolding",
+      "schema": "https://golem-xiv.spec/schema/cognition-event.schema.json",
+      "json": { "type": "IntentCodeUnfolding", "id": 3001, "expressionId": 2000, "codeDelta": "2 + 2" }
+    },
+    {
+      "name": "event-fulfillment-culmination",
+      "schema": "https://golem-xiv.spec/schema/cognition-event.schema.json",
+      "notes": "FulfillmentCulmination.impeded has no default and is always present.",
+      "json": { "type": "FulfillmentCulmination", "id": 3002, "expressionId": 2002, "impeded": false }
+    },
+    {
+      "name": "event-cognition-designation",
+      "schema": "https://golem-xiv.spec/schema/cognition-event.schema.json",
+      "json": { "type": "CognitionDesignation", "expressionId": 2000, "title": "Add two numbers" }
+    },
+    {
+      "name": "output-welcome",
+      "schema": "https://golem-xiv.spec/schema/golem-output.schema.json",
+      "json": { "type": "Welcome", "message": "Welcome to Golem XIV", "neo4jBrowserUrl": "http://localhost:7474" }
+    },
+    {
+      "name": "output-cognition-wrapping-event",
+      "schema": "https://golem-xiv.spec/schema/golem-output.schema.json",
+      "notes": "CognitionEvents reach clients wrapped in GolemOutput.Cognition.",
+      "json": { "type": "Cognition", "cognitionId": 1000, "event": { "type": "TextUnfolding", "id": 3000, "expressionId": 2000, "textDelta": "Hello, " } }
+    },
+    {
+      "name": "output-message",
+      "schema": "https://golem-xiv.spec/schema/golem-output.schema.json",
+      "json": {
+        "type": "Message",
+        "cognitionId": 1000,
+        "expression": {
+          "id": 1,
+          "agent": { "type": "com.xemantic.ai.golem.api.EpistemicAgent.Human", "id": 0 },
+          "phenomena": [ { "type": "Text", "id": 10, "text": "What is 2 + 2?" } ],
+          "initiationMoment": "2026-06-04T11:59:59Z",
+          "culminationMoment": "2026-06-04T11:59:59Z"
+        }
+      }
+    }
+  ]
+}
